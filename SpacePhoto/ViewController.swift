@@ -8,7 +8,7 @@
 import UIKit
 import Dispatch
 
-class ViewController: UIViewController, UINavigationControllerDelegate {
+class ViewController: UIViewController {
     let photoInfoController = PhotoInfoController()
 
     @IBOutlet weak var spacePhotoImageView: UIImageView!
@@ -23,17 +23,23 @@ class ViewController: UIViewController, UINavigationControllerDelegate {
         descriptionLabel.text = ""
         copyrightLabel.text = ""
         activityIndicator.isHidden = false
-        photoInfoController.fetchPhotoInfo { (result) in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let photoInfo):
-                    self.updateUI(with: photoInfo)
-                case .failure(let error):
-                    self.updateUI(with: error)
-                }
-            }
+        Task {
+            let photoInfo = try await self.photoInfoController.asyncFetchPhotoInfo()
+            self.updateUI(with: photoInfo)
+            
         }
+//        photoInfoController.fetchPhotoInfo { (result) in
+//            DispatchQueue.main.async {
+//                switch result {
+//                case .success(let photoInfo):
+//                    self.updateUI(with: photoInfo)
+//                case .failure(let error):
+//                    self.updateUI(with: error)
+//                }
+//            }
+//        }
     }
+        
 
     func updateUI(with photoInfo: PhotoInfo) {
         photoInfoController.fetchImage(from: photoInfo.url) { (result) in
@@ -46,8 +52,8 @@ class ViewController: UIViewController, UINavigationControllerDelegate {
                     self.descriptionLabel.text = photoInfo.description
                     self.copyrightLabel.text = photoInfo.copyright
                     self.spacePhotoImageView.image = image
-                    
-                
+
+
                 case .failure(let error):
                     self.updateUI(with: error)
                 }
@@ -55,7 +61,7 @@ class ViewController: UIViewController, UINavigationControllerDelegate {
         }
     }
     
-    func updateUI(with error: Error) {
+    func updateUI(with error: Error)  {
         self.activityIndicator.isHidden = true
         title = "Error fetching photo"
         spacePhotoImageView.image = UIImage(systemName: "exclamationmark.octagon")
