@@ -7,12 +7,12 @@
 
 import Foundation
 import UIKit
-
-class PhotoInfoController {
-    func fetchPhotoIno(completion: @escaping (Result<PhotoInfo, Error>) -> Void) {
+@MainActor
+struct PhotoInfoController {
+    func fetchPhotoInfo(completion: @escaping (Result<PhotoInfo, Error>) -> Void) {
         var urlComponents = URLComponents(string: "https://api.nasa.gov/planetary/apod")!
         urlComponents.queryItems = [
-            "api_key": "sAtqqgmHhdaL89lz2gqPc7J10VONkL2vfWN7LzIa"
+            "api_key": "DEMO_KEY"
         ].map { URLQueryItem(name: $0.key, value: $0.value) }
 
         let task = URLSession.shared.dataTask(with: urlComponents.url!) {
@@ -29,12 +29,14 @@ class PhotoInfoController {
                         completion(.failure(error))
                     }
             }
-        
+    
         task.resume()
     }
     
     enum PhotoInfoError: Error, LocalizedError {
         case imageDataMissing
+//        Adding an "invalidServerResponse" error type
+        case invalidServerResponse
     }
     
     func fetchImage(from url: URL, completion: @escaping (Result<UIImage, Error>) -> Void) {
@@ -51,5 +53,22 @@ class PhotoInfoController {
         }
         task.resume()
     }
+    
+//    new fetchPhoto() will use async and await to return the image from the api instead of using a completion handler
+    func asyncFetchPhotoInfo() async throws -> PhotoInfo {
+        var urlComponents = URLComponents(string: "https://api.nasa.gov/planetary/apod")!
+        urlComponents.queryItems = [
+            "api_key": "DEMO_KEY"
+        ].map { URLQueryItem(name: $0.key, value: $0.value) }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: urlComponents.url!)
+                let photoInfo = try JSONDecoder().decode(PhotoInfo.self, from: data)
+            print(photoInfo)
+            return photoInfo
+        } catch {
+            throw PhotoInfoError.imageDataMissing
+        }
+    }
+    
 }
 
